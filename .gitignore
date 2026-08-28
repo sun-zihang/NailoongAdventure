@@ -1,0 +1,43 @@
+# ===== Unity 生成/缓存目录（不纳入版本控制）=====
+/Library/
+/Temp/
+/Logs/
+/Obj/
+/Build/
+/Builds/
+/MemoryCaptures/
+/UserSettings/
+/ProjectSettings/ProjectVersionOverride.txt
+
+# Unity 目录监控临时文件
+~UnityDirMonSyncFile~*
+
+# ===== 运行时一键生成的资产（打开工程后由「奶龙/一键生成 Demo」重建）=====
+# 这些目录由 Editor 脚本重新生成，仓库只保留可复现的源代码。
+/Assets/NailoongAdventure/Prefabs/
+/Assets/NailoongAdventure/Scenes/
+/Assets/NailoongAdventure/Audio/
+/Assets/NailoongAdventure/VFX/
+/Assets/NailoongAdventure/Materials/
+/Assets/NailoongAdventure/Fonts/
+/Assets/NailoongAdventure/Textures/
+
+# ===== IDE / 编辑器 =====
+.vs/
+.idea/
+*.csproj
+*.sln
+*.unityproj
+*.booproj
+*.pidb
+*.suo
+*.user
+*.userprefs
+*.unitypackage
+
+# ===== OS / 杂项 =====
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+~$*
