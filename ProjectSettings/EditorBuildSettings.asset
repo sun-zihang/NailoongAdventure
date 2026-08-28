@@ -4,6 +4,18 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/NailoongAdventure/Scenes/MainMenu.unity
+    guid: de63d21df6a2a5e4ab9d7f5375b007a9
+  - enabled: 1
+    path: Assets/NailoongAdventure/Scenes/Level1_Beach.unity
+    guid: 6c85a694f9b96da4a9b574e27e1f42b4
+  - enabled: 1
+    path: Assets/NailoongAdventure/Scenes/Level2_Forest.unity
+    guid: df4d80d73989aa04f835bbe6c870b11c
+  - enabled: 1
+    path: Assets/NailoongAdventure/Scenes/Level3_Volcano.unity
+    guid: 2c3d315ab800d4e42b004e44b1d80916
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

@@ -35,7 +35,7 @@ namespace Nailoong.EditorTools
             var root = new GameObject(objectName);
 
             // ---------- 骨骼 ----------
-            var hips = Bone(root.transform, "Hips", Vector3.zero, new Vector3(0f, 0.62f, 0f));
+            var hips = Bone(root.transform, "Hips", new Vector3(0f, 0.62f, 0f));
             var spine = Bone(hips, "Spine", new Vector3(0f, 0.14f, 0f));
             var chest = Bone(spine, "Chest", new Vector3(0f, 0.16f, 0f));
             var neck = Bone(chest, "Neck", new Vector3(0f, 0.24f, 0.02f));

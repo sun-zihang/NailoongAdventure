@@ -35,6 +35,9 @@ EditorSettings:
   m_DisableCookiesInLightmapper: 0
   m_ShadowmaskStitching: 1
   m_AssetPipelineMode: 1
+  m_DesiredImportWorkerCount: 0
+  m_StandbyImportWorkerCount: 0
+  m_IdleImportWorkerShutdownDelay: 0
   m_RefreshImportMode: 0
   m_CacheServerMode: 0
   m_CacheServerEndpoint: 

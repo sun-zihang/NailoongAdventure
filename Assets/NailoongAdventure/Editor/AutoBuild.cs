@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using UnityEditor;
+using UnityEngine;
 
 namespace Nailoong.EditorTools
 {
@@ -19,6 +20,9 @@ namespace Nailoong.EditorTools
 
         static void Run()
         {
+            // 批处理模式下不做自动生成，完全交由 BuildWindows64 显式控制，
+            // 避免 InitializeOnLoad 与 -executeMethod 互相触发 AssetDatabase.Refresh 造成死锁。
+            if (Application.isBatchMode) return;
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             if (EditorPrefs.GetBool(DoneKey, false)) return;
 

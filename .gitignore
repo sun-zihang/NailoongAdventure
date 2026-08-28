@@ -27,6 +27,9 @@
 # 构建产物
 /Builds/
 
+# Web 展示页构建输出（由 Cloudflare Pages 在 CI 中生成，不入库）
+/dist/
+
 # ===== IDE / 编辑器 =====
 .vs/
 .idea/

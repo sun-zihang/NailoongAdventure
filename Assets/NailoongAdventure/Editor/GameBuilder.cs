@@ -126,6 +126,15 @@ namespace Nailoong.EditorTools
 
             ConfigureBuildSettings();
 
+            // 强制使用 Mono 后端并关闭托管代码剥离：绕开 IL2CPP 链接器
+            // (Unity.Linker.Api.dll) 被本机应用控制策略拦截导致 BuildPlayer 失败的问题。
+            UnityEditor.PlayerSettings.SetScriptingBackend(
+                UnityEditor.BuildTargetGroup.Standalone,
+                UnityEditor.ScriptingImplementation.Mono2x);
+            UnityEditor.PlayerSettings.SetManagedStrippingLevel(
+                UnityEditor.BuildTargetGroup.Standalone,
+                UnityEditor.ManagedStrippingLevel.Disabled);
+
             string outDir = "Builds/Win64";
             if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
             Directory.CreateDirectory(outDir);
@@ -149,6 +158,10 @@ namespace Nailoong.EditorTools
 
             if (result != "Succeeded")
             {
+                foreach (var step in report.steps)
+                    foreach (var m in step.messages)
+                        if (m.type == UnityEngine.LogType.Error)
+                            Debug.LogError("[奶龙构建错误] " + m.content);
                 Debug.LogError("[奶龙] 构建未成功，结果: " + result + "，请查看 Console 中的编译/打包错误。");
                 if (Application.isBatchMode) EditorApplication.Exit(1);
                 return;

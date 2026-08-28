@@ -1,0 +1,11 @@
+{
+  "name": "nailoong-adventure-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "奶龙冒险 Nailoong Adventure — 静态展示页（Cloudflare Pages）",
+  "scripts": {
+    "build": "node build-site.js",
+    "dev": "node build-site.js"
+  },
+  "license": "MIT"
+}

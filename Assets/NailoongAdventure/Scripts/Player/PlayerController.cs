@@ -203,7 +203,7 @@ namespace Nailoong
             vel.y = rb.linearVelocity.y * 0.35f;
             rb.linearVelocity = vel;
 
-            if (VFXManager.Instance != null && Random.value < 0.6f)
+            if (VFXManager.Instance != null && UnityEngine.Random.value < 0.6f)
                 VFXManager.Instance.Play("vfx_dash", transform.position, Quaternion.LookRotation(-dashDir), 0.7f);
 
             if (dashElapsed >= dashDuration) IsDashing = false;
