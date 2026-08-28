@@ -26,6 +26,8 @@
 > - **奶龙 / 仅重新生成音频**：只重新合成 WAV 音效与 BGM。
 > - **奶龙 / 构建 Windows 64 可执行程序**：生成场景后打包出 exe，输出到 `Builds/Win64/NailoongAdventure.exe`。
 >
+> **最简单的方式：双击项目根目录的 `build.bat`**，它会自动完成"生成资产 → 打包 exe"，结果输出到 `Builds/Win64/NailoongAdventure.exe`。
+>
 > 命令行等价调用（CI / 批处理）：
 > ```bat
 > "C:\Program Files\Unity\Hub\Editor\6000.3.22f1\Editor\Unity.exe" ^
