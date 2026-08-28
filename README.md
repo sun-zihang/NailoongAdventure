@@ -24,6 +24,17 @@
 > - **奶龙 / 一键生成 Demo（全量重建）**：字体、材质、音效、特效、预制体、四个场景、构建设置，全部重建。
 > - **奶龙 / 仅重新生成场景**：资产不变，只重建四个场景。
 > - **奶龙 / 仅重新生成音频**：只重新合成 WAV 音效与 BGM。
+> - **奶龙 / 构建 Windows 64 可执行程序**：生成场景后打包出 exe，输出到 `Builds/Win64/NailoongAdventure.exe`。
+>
+> 命令行等价调用（CI / 批处理）：
+> ```bat
+> "C:\Program Files\Unity\Hub\Editor\6000.3.22f1\Editor\Unity.exe" ^
+>   -batchmode -quit -silent-crashes -accept-apiupdate ^
+>   -projectPath "D:\Project\NailoongAdventure" ^
+>   -executeMethod Nailoong.EditorTools.GameBuilder.BuildWindows64 ^
+>   -logFile "%TEMP%\nailoong_build.log"
+> ```
+> 该方法自带退出码（成功 `Exit(0)` / 失败 `Exit(1)`），场景不存在时会先自动一键生成。
 
 **打包 exe**：菜单 `File → Build Settings → Build`，目标平台 Windows x64，输出目录建议 `Build/Win64`。
 

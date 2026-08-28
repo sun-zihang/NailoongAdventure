@@ -14,13 +14,18 @@
 
 # ===== 运行时一键生成的资产（打开工程后由「奶龙/一键生成 Demo」重建）=====
 # 这些目录由 Editor 脚本重新生成，仓库只保留可复现的源代码。
-/Assets/NailoongAdventure/Prefabs/
+# 注意：Prefabs / VFX / Audio / Fonts 在 Resources/ 子目录下（见 GameBuilder 路径常量）。
+/Assets/NailoongAdventure/Resources/Prefabs/
+/Assets/NailoongAdventure/Resources/VFX/
+/Assets/NailoongAdventure/Resources/Audio/
+/Assets/NailoongAdventure/Resources/Fonts/
 /Assets/NailoongAdventure/Scenes/
-/Assets/NailoongAdventure/Audio/
-/Assets/NailoongAdventure/VFX/
 /Assets/NailoongAdventure/Materials/
-/Assets/NailoongAdventure/Fonts/
+/Assets/NailoongAdventure/Meshes/
 /Assets/NailoongAdventure/Textures/
+
+# 构建产物
+/Builds/
 
 # ===== IDE / 编辑器 =====
 .vs/

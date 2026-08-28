@@ -94,6 +94,70 @@ namespace Nailoong.EditorTools
             AssetDatabase.Refresh();
         }
 
+        // ================= 构建可执行程序 =================
+        /// <summary>
+        /// 构建 Windows 64 位可执行程序。可由菜单触发，也可在批处理中
+        /// 用 -executeMethod Nailoong.EditorTools.GameBuilder.BuildWindows64 调用。
+        /// 若场景尚未生成，会先自动执行一键生成。
+        /// </summary>
+        [MenuItem("奶龙/构建 Windows 64 可执行程序", false, 20)]
+        public static void BuildWindows64()
+        {
+            // 场景不存在 -> 先一键生成
+            if (!File.Exists(SCENES + "/Level1_Beach.unity"))
+            {
+                Debug.Log("[奶龙] 未检测到关卡场景，先执行一键生成…");
+                BuildAll();
+            }
+
+            var scenes = new System.Collections.Generic.List<string>();
+            foreach (var name in new[] { "MainMenu", "Level1_Beach", "Level2_Forest", "Level3_Volcano" })
+            {
+                string path = SCENES + "/" + name + ".unity";
+                if (File.Exists(path)) scenes.Add(path);
+            }
+
+            if (scenes.Count == 0)
+            {
+                Debug.LogError("[奶龙] 没有可构建的场景，构建中止。请先执行「奶龙/一键生成 Demo（全量重建）」。");
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                return;
+            }
+
+            ConfigureBuildSettings();
+
+            string outDir = "Builds/Win64";
+            if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            Directory.CreateDirectory(outDir);
+
+            var options = new BuildPlayerOptions
+            {
+                scenes = scenes.ToArray(),
+                locationPathName = outDir + "/NailoongAdventure.exe",
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None
+            };
+
+            Debug.Log("[奶龙] 开始构建 Windows 64 可执行程序，场景数: " + scenes.Count);
+            var report = BuildPipeline.BuildPlayer(options);
+
+            string result = report.summary.result.ToString();
+            Debug.Log("[奶龙] 构建结果: " + result
+                      + " | 错误数: " + report.summary.totalErrors
+                      + " | 耗时: " + report.summary.totalTime
+                      + " | 输出: " + report.summary.outputPath);
+
+            if (result != "Succeeded")
+            {
+                Debug.LogError("[奶龙] 构建未成功，结果: " + result + "，请查看 Console 中的编译/打包错误。");
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                return;
+            }
+
+            // 批处理模式下主动退出（此时不应再加 -quit，否则编辑器会在初始化完成前被提前终止）
+            if (Application.isBatchMode) EditorApplication.Exit(0);
+        }
+
         // ================= 目录与基础资产 =================
         static void PrepareFolders()
         {
