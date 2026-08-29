@@ -215,7 +215,6 @@ namespace Nailoong.EditorTools
             PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.Disabled);
             // 关闭压缩：产物为未压缩的 .wasm/.data/.js，静态托管时无需服务端配置 Content-Encoding
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
-            PlayerSettings.WebGL.memorySize = 512;
 
             string outDir = "Builds/WebGL";
             if (Directory.Exists(outDir)) Directory.Delete(outDir, true);

@@ -27,6 +27,13 @@ if (fs.existsSync(gameSrc) && fs.statSync(gameSrc).isDirectory()) {
   console.log('  · 未检测到 WebGLBuild/，本次仅发布展示页');
 }
 
+// 3) Cloudflare Pages 响应头（为 /game/* 声明 COOP/COEP，支持 WebGL 多线程）
+const headersSrc = path.join(root, '_headers');
+if (fs.existsSync(headersSrc)) {
+  fs.copyFileSync(headersSrc, path.join(dist, '_headers'));
+  console.log('  · 已写入 _headers（/game/* 跨源隔离）');
+}
+
 console.log('✅ 构建完成 -> dist/index.html');
 
 function copyDir(src, dest) {

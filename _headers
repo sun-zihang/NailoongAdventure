@@ -1,0 +1,6 @@
+# 为 Unity WebGL 网页版启用跨源隔离（COOP/COEP），
+# 以支持 WebAssembly 多线程（SharedArrayBuffer）。
+# 仅在 /game/* 作用域下声明，不影响展示页与其它资源。
+/game/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
