@@ -13,14 +13,13 @@ namespace Nailoong
         // 骨骼命名（须与建模脚本一致）
         static readonly string[] BoneNames =
         {
-            "Hips","Spine","Chest","Neck","Head","Jaw",
-            "Tail1","Tail2","Tail3","Tail4",
+            "Hips","Spine","Chest","Belly","Neck","Head","Jaw",
+            "Tail1","Tail2","Tail3",
             "ArmL","ArmR","HandL","HandR",
-            "LegL","LegR","FootL","FootR",
-            "WingL","WingR"
+            "LegL","LegR","FootL","FootR"
         };
 
-        public enum State { Locomotion, Jump, Fall, Land, Dash, Claw, Tail, Breath, Slam, Hurt, Eat, Victory, Sleep }
+        public enum State { Locomotion, Jump, Fall, Land, Dash, Claw, Tail, Breath, Slam, Hurt, Eat, Victory, Sleep, Fire, ColorChange, Grow }
 
         [Header("姿态平滑")]
         public float blendSpeed = 12f;
@@ -49,6 +48,16 @@ namespace Nailoong
         Transform hips;
         Vector3 hipsBasePos;
 
+        // 奶龙灵魂：duang~duang 大肚腩弹性抖动
+        Transform belly;
+        Vector3 bellyBasePos;
+        Vector3 bellyBaseScale;
+        float bellySquash;
+        float bellyVel;
+        const float BELLY_STIFFNESS = 220f;
+        const float BELLY_DAMPING = 10f;
+        float bellyStepPhase;
+
         State state = State.Locomotion;
         float stateTime, actionDuration;
         float blinkTimer, breathe, tailPhase, landTimer, hurtTimer;
@@ -68,6 +77,13 @@ namespace Nailoong
             hips = FindDeep(transform, "Hips");
             if (hips != null) hipsBasePos = hips.localPosition;
 
+            belly = FindDeep(transform, "Belly");
+            if (belly != null)
+            {
+                bellyBasePos = belly.localPosition;
+                bellyBaseScale = belly.localScale;
+            }
+
             player = GetComponent<PlayerController>();
             dmg = GetComponent<Damageable>();
 
@@ -79,10 +95,10 @@ namespace Nailoong
 
             if (player != null)
             {
-                player.OnJump += () => Play(State.Jump, 0.45f);
-                player.OnDoubleJump += () => Play(State.Jump, 0.5f);
-                player.OnLand += () => { landTimer = 0.28f; Play(State.Land, 0.28f); };
-                player.OnDashStart += () => Play(State.Dash, 0.5f);
+                player.OnJump += () => { ImpulseBelly(0.7f); Play(State.Jump, 0.45f); };
+                player.OnDoubleJump += () => { ImpulseBelly(0.55f); Play(State.Jump, 0.5f); };
+                player.OnLand += () => { landTimer = 0.28f; ImpulseBelly(1.35f); Play(State.Land, 0.28f); };
+                player.OnDashStart += () => { ImpulseBelly(0.45f); Play(State.Dash, 0.5f); };
             }
             if (dmg != null) dmg.Damaged += (d, amount, point) => { hurtTimer = 0.45f; Play(State.Hurt, 0.45f); };
         }
@@ -137,6 +153,9 @@ namespace Nailoong
                 case State.Eat: PoseEat(t); break;
                 case State.Victory: PoseVictory(t); break;
                 case State.Sleep: PoseSleep(t); break;
+                case State.Fire: PoseFire(t); break;
+                case State.ColorChange: PoseColorChange(t); break;
+                case State.Grow: PoseGrow(t); break;
             }
 
             // 叠加：呼吸
@@ -152,9 +171,14 @@ namespace Nailoong
                 Add("Tail" + (i + 1), new Vector3(Mathf.Sin(ph) * 4f * (1f - move01 * 0.3f), Mathf.Sin(ph * 0.8f) * (7f + move01 * 6f), 0f));
             }
 
-            // 叠加：跑动时身体前倾
-            Add("Hips", new Vector3(move01 * 7f, 0f, 0f));
+            // 叠加：跑动时身体前倾 + 奶龙憨态 waddle（左右摆臀）
+            Add("Hips", new Vector3(move01 * 7f, Mathf.Sin(t * (6f + move01 * 5f)) * move01 * 7f, 0f));
             Add("Neck", new Vector3(-move01 * 5f, 0f, 0f));
+
+            // 叠加：走路时肚皮轻微 duang（一步一颤）
+            bellyStepPhase += Time.deltaTime * (7f + move01 * 6f);
+            float stepWobble = Mathf.Sin(bellyStepPhase) * 0.06f * move01;
+            bellyVel += stepWobble - bellySquash * 0.5f * move01;
         }
 
         // ---------- 各状态姿态 ----------
@@ -175,8 +199,7 @@ namespace Nailoong
             Add("FootL", new Vector3(Mathf.Max(0f, -swing) * 12f, 0f, 0f));
             Add("FootR", new Vector3(Mathf.Max(0f, swing) * 12f, 0f, 0f));
             Add("Head", new Vector3(-move01 * 4f, Mathf.Sin(t * 1.3f) * 4f, 0f));
-            Add("WingL", new Vector3(0f, 0f, -18f - Mathf.Sin(t * 7f) * (6f + move01 * 14f)));
-            Add("WingR", new Vector3(0f, 0f, 18f + Mathf.Sin(t * 7f) * (6f + move01 * 14f)));
+            // 奶龙没有翅膀，不生成翅膀摆动
         }
 
         void PoseJump()
@@ -186,8 +209,6 @@ namespace Nailoong
             Add("LegL", new Vector3(-32f, 0f, 0f));
             Add("LegR", new Vector3(-26f, 0f, 0f));
             Add("Head", new Vector3(-8f, 0f, 0f));
-            Add("WingL", new Vector3(0f, 0f, -46f));
-            Add("WingR", new Vector3(0f, 0f, 46f));
         }
 
         void PoseFall()
@@ -197,8 +218,6 @@ namespace Nailoong
             Add("LegL", new Vector3(24f, 0f, 0f));
             Add("LegR", new Vector3(18f, 0f, 0f));
             Add("Head", new Vector3(10f, 0f, 0f));
-            Add("WingL", new Vector3(0f, 0f, -58f));
-            Add("WingR", new Vector3(0f, 0f, 58f));
         }
 
         void PoseLand()
@@ -263,8 +282,7 @@ namespace Nailoong
             Add("ArmL", new Vector3(-46f * s, 0f, -22f));
             Add("ArmR", new Vector3(-46f * s, 0f, 22f));
             Add("Chest", new Vector3(-8f * s, 0f, 0f));
-            Add("WingL", new Vector3(0f, 0f, -52f * s - 14f));
-            Add("WingR", new Vector3(0f, 0f, 52f * s + 14f));
+            Add("Belly", new Vector3(-4f * s, 0f, 0f));
         }
 
         void PoseSlam()
@@ -326,6 +344,45 @@ namespace Nailoong
             squash = 0.08f + b * 0.03f;
         }
 
+        void PoseFire(float t)
+        {
+            float k = Mathf.Clamp01(stateTime / Mathf.Max(actionDuration, 0.01f));
+            float wind = Mathf.SmoothStep(0f, 0.2f, k);
+            float end = 1f - Mathf.SmoothStep(0.75f, 1f, k);
+            float s = wind * end;
+            Add("Head", new Vector3(-18f * s, 0f, 0f));
+            Add("Neck", new Vector3(-12f * s, 0f, 0f));
+            Add("Jaw", new Vector3(42f * s + Mathf.Sin(t * 28f) * 4f * s, 0f, 0f));
+            Add("ArmL", new Vector3(-40f * s, 0f, -26f));
+            Add("ArmR", new Vector3(-40f * s, 0f, 26f));
+            Add("Chest", new Vector3(-6f * s, 0f, 0f));
+            Add("Belly", new Vector3(-5f * s, 0f, 0f));
+        }
+
+        void PoseColorChange(float t)
+        {
+            float k = Mathf.Clamp01(stateTime / Mathf.Max(actionDuration, 0.01f));
+            float s = Mathf.Sin(Mathf.Clamp01(k) * Mathf.PI);
+            Add("Head", new Vector3(-8f * s, Mathf.Sin(t * 12f) * 10f * s, 0f));
+            Add("ArmL", new Vector3(0f, 0f, -140f * s));
+            Add("ArmR", new Vector3(0f, 0f, 140f * s));
+            Add("Jaw", new Vector3(20f * s, 0f, 0f));
+            squash = 0.12f * s;
+        }
+
+        void PoseGrow(float t)
+        {
+            float k = Mathf.Clamp01(stateTime / Mathf.Max(actionDuration, 0.01f));
+            float s = Mathf.Sin(Mathf.Clamp01(k) * Mathf.PI);
+            Add("Head", new Vector3(-10f * s, 0f, 0f));
+            Add("Spine", new Vector3(-6f * s, 0f, 0f));
+            Add("ArmL", new Vector3(-150f * s, 0f, -20f * s));
+            Add("ArmR", new Vector3(-150f * s, 0f, 20f * s));
+            Add("LegL", new Vector3(-20f * s, 0f, 0f));
+            Add("LegR", new Vector3(-20f * s, 0f, 0f));
+            squash = -0.14f * s; // 向上拉伸
+        }
+
         // ---------- 应用 ----------
         void ApplyPose()
         {
@@ -357,8 +414,40 @@ namespace Nailoong
             else v.z = value;
         }
 
+        /// <summary>给肚皮一个弹性冲量：落地/跳跃/冲刺时调用。</summary>
+        public void ImpulseBelly(float force)
+        {
+            bellyVel += force;
+        }
+
+        void UpdateBelly(float dt)
+        {
+            if (belly == null) return;
+
+            // 弹簧阻尼：-kx - cv
+            float accel = -bellySquash * BELLY_STIFFNESS - bellyVel * BELLY_DAMPING;
+            bellyVel += accel * dt;
+            bellySquash += bellyVel * dt;
+
+            // 限制最大形变，防止穿模
+            bellySquash = Mathf.Clamp(bellySquash, -0.35f, 0.45f);
+
+            // 体积守恒：Y 拉伸 ↔ XZ 压缩
+            float sxz = 1f - bellySquash * 0.55f;
+            float sy = 1f + bellySquash;
+            belly.localScale = new Vector3(
+                bellyBaseScale.x * sxz,
+                bellyBaseScale.y * sy,
+                bellyBaseScale.z * sxz);
+
+            // 肚皮随抖动上下轻微位移
+            belly.localPosition = bellyBasePos + new Vector3(0f, bellySquash * 0.07f, 0f);
+        }
+
         void UpdateExtras()
         {
+            UpdateBelly(Time.deltaTime);
+
             if (hips != null)
             {
                 float bob = player != null && player.IsGrounded

@@ -15,7 +15,9 @@ namespace Nailoong.EditorTools
             System.IO.Directory.CreateDirectory(folder);
             var shader = Shader.Find("Particles/Standard Unlit");
             particleMaterial = new Material(shader) { name = "VFX_Particle" };
-            AssetDatabase.CreateAsset(particleMaterial, folder + "/../Materials/VFX_Particle.mat");
+            string matPath = GameBuilder.MAT + "/VFX_Particle.mat";
+            System.IO.Directory.CreateDirectory(GameBuilder.MAT);
+            AssetDatabase.CreateAsset(particleMaterial, matPath);
 
             Save(folder, "vfx_hit", Hit());
             Save(folder, "vfx_explode", Explode());
