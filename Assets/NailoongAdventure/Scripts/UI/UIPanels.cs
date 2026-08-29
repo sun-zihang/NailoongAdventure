@@ -230,8 +230,13 @@ namespace Nailoong
             else
             {
                 GameManager.Instance.Resume();
+#if UNITY_WEBGL
+                // WebGL 上保持鼠标可见
+                Cursor.visible = true;
+#else
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+#endif
             }
         }
 
@@ -254,8 +259,13 @@ namespace Nailoong
             if (panelOver == null) return;
             panelOver.SetActive(show);
             if (hudRoot != null) hudRoot.gameObject.SetActive(!show);
+#if UNITY_WEBGL
+            // WebGL 上始终显示鼠标
+            Cursor.visible = true;
+#else
             Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = show;
+#endif
         }
 
         public void ShowDialogue(string speaker, string content)

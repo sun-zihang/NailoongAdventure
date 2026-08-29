@@ -79,8 +79,14 @@ namespace Nailoong
                 var player = PlayerController.Instance;
                 if (player != null) target = player.transform;
             }
+#if UNITY_WEBGL
+            // WebGL 上无法可靠地 pointer-lock（需用户手势），且玩家需要鼠标点击 UI / 攻击，
+            // 故保持鼠标可见、不锁定指针。
+            Cursor.visible = true;
+#else
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+#endif
         }
 
         void LateUpdate()

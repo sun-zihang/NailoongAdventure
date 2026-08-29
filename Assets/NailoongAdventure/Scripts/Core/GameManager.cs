@@ -152,8 +152,13 @@ namespace Nailoong
             if (State != GameState.Paused) return;
             State = GameState.Playing;
             Time.timeScale = 1f;
+#if UNITY_WEBGL
+            // WebGL 上保持鼠标可见（同 CameraRig 的说明）
+            Cursor.visible = true;
+#else
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+#endif
         }
 
         public void Quit()
