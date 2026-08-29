@@ -213,8 +213,10 @@ namespace Nailoong.EditorTools
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.WebGL, ScriptingImplementation.IL2CPP);
             // 关闭托管剥离：避免反射调用/程序化生成依赖的类型被误删
             PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.Disabled);
-            // 关闭压缩：产物为未压缩的 .wasm/.data/.js，静态托管时无需服务端配置 Content-Encoding
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            // 使用 Brotli 压缩：wasm(~42MB) 压到 ~10MB、data(~18MB) 压到 ~5MB，
+            // 全部低于 Cloudflare Pages 单文件 25MB 上限，避免托管时被静默丢弃。
+            // Unity 6 的 loader 会在 JS 端自动解压，无需服务端配置 Content-Encoding。
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
 
             string outDir = "Builds/WebGL";
             if (Directory.Exists(outDir)) Directory.Delete(outDir, true);

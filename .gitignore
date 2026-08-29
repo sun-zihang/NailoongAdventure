@@ -30,6 +30,9 @@
 # Web 展示页构建输出（由 Cloudflare Pages 在 CI 中生成，不入库）
 /dist/
 
+# Wrangler 本地缓存/状态
+/.wrangler/
+
 # ===== IDE / 编辑器 =====
 .vs/
 .idea/
