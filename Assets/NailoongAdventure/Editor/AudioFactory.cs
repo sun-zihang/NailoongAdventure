@@ -97,6 +97,35 @@ namespace Nailoong.EditorTools
                 float v = Mathf.Clamp(clip.Samples[i], -1f, 1f);
                 bw.Write((short)(v * 32767f));
             }
+
+            bw.Flush();
+            bw.Close();
+            fs.Close();
+
+            // 强制导入设置为 Vorbis + DecompressOnLoad：WebGL 对浏览器 decodeAudioData 更稳，
+            // 避免移动端/微信内置浏览器直接解码 PCM WAV 报 EncodingError。
+            ApplyWebGLSafeImporter(path);
+        }
+
+        static void ApplyWebGLSafeImporter(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as AudioImporter;
+            if (importer == null) return;
+
+            importer.forceToMono = true;
+            importer.loadInBackground = false;
+
+            var settings = importer.defaultSampleSettings;
+            settings.loadType = AudioClipLoadType.DecompressOnLoad;
+            settings.compressionFormat = AudioCompressionFormat.Vorbis;
+            settings.quality = 0.75f;
+            settings.sampleRateSetting = AudioSampleRateSetting.PreserveSampleRate;
+            settings.preloadAudioData = true;
+            importer.defaultSampleSettings = settings;
+
+            // 只设 default 即可覆盖 WebGL；不遍历所有 BuildTargetGroup，避免 Unity 6
+            // ValidatePlatform 对非法/已废弃平台名抛 LogError。
+            importer.SaveAndReimport();
         }
 
         // ================= 合成基元 =================
