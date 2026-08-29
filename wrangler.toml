@@ -1,0 +1,8 @@
+# Cloudflare Pages 配置（命令行直部署时使用）
+# 日常部署走 GitHub 连接：推送 main 即由 Cloudflare 自动执行 `npm run build` 并发布 dist/。
+# 若要用命令行直部署，先 `npm i -g wrangler`，登录后执行 `wrangler pages deploy dist`。
+name = "nailoong-adventure"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+# 在 Cloudflare 控制台「账户首页 → 右侧 API 令牌/账户 ID」获取后填入下面（仅命令行部署需要）：
+# account_id = ""

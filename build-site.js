@@ -18,6 +18,10 @@ if (!fs.existsSync(indexSrc)) {
 }
 fs.copyFileSync(indexSrc, path.join(dist, 'index.html'));
 
+// 1.5) 404 回退页：Cloudflare Pages 对未匹配路由会回退到根目录的 404.html，
+// 这里直接复用展示页，避免玩家点到不存在的路径时看到裸 404。
+fs.copyFileSync(indexSrc, path.join(dist, '404.html'));
+
 // 2) WebGL 游戏产物（Unity 构建后拷入 WebGLBuild/；尚未构建时跳过，不影响发布）
 const gameSrc = path.join(root, 'WebGLBuild');
 if (fs.existsSync(gameSrc) && fs.statSync(gameSrc).isDirectory()) {
