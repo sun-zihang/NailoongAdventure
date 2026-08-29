@@ -4,3 +4,10 @@
 /game/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
+
+# 禁止 Cloudflare / 中间代理对 .unityweb 做自动转码或压缩。
+# Unity 的 Decompression Fallback 期望拿到原始 .unityweb 字节，
+# 由 JS 端自行解压；若 CDN 额外加 Content-Encoding 头，会触发
+# "Content-Encoding header is incorrectly enabled" 错误。
+/game/Build/*.unityweb
+  Cache-Control: public, max-age=300, no-transform
