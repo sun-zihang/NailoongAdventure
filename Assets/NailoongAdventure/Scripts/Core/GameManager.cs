@@ -69,6 +69,10 @@ namespace Nailoong
             {
                 State = GameState.MainMenu;
             }
+            else if (scene.name == "Ending")
+            {
+                State = GameState.Ending;
+            }
             else
             {
                 State = GameState.Playing;
@@ -100,7 +104,12 @@ namespace Nailoong
             else ToEnding();
         }
 
-        public void ToEnding() => StartCoroutine(LoadSceneRoutine("Ending"));
+        public void ToEnding()
+        {
+            // Ending 场景不存在时兜底回主菜单，避免黑屏报错
+            if (SceneUtility.GetBuildIndexByScenePath("Ending") < 0) { ToMenu(); return; }
+            StartCoroutine(LoadSceneRoutine("Ending"));
+        }
         public void ToMenu() => StartCoroutine(LoadSceneRoutine(menuScene));
 
         IEnumerator LoadSceneRoutine(string sceneName)
@@ -127,8 +136,32 @@ namespace Nailoong
             Save.bestTime[CurrentLevel] = Save.bestTime.ContainsKey(CurrentLevel)
                 ? Mathf.Min(Save.bestTime[CurrentLevel], LevelTime)
                 : LevelTime;
+
+            // 星级评分：parTime 内 3 星，1.5 倍内 2 星，否则 1 星
+            int stars = 1;
+            var flow = FindObjectOfType<LevelFlow>();
+            if (flow != null)
+            {
+                float par = flow.ParTime;
+                if (LevelTime <= par) stars = 3;
+                else if (LevelTime <= par * 1.5f) stars = 2;
+            }
+            int prev = GetStars(CurrentLevel);
+            Save.bestStars[CurrentLevel] = Mathf.Max(prev, stars);
+
             WriteSave();
             GameEvents.LevelClear(CurrentLevel, LevelTime);
+        }
+
+        public int GetStars(int levelIndex) => Save.bestStars.TryGetValue(levelIndex, out var s) ? s : 0;
+
+        /// <summary>甜品图鉴：首次拾取记入存档。</summary>
+        public void CollectItem(string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId) || Save.collectedItems.Contains(itemId)) return;
+            Save.collectedItems.Add(itemId);
+            WriteSave();
+            GameEvents.Toast($"✦ 新甜品入图鉴！({Save.collectedItems.Count})");
         }
 
         public void GameOver()
@@ -195,6 +228,13 @@ namespace Nailoong
         public void WriteSave()
         {
             Save.Ensure();
+            // 字典 → 平铺列表（JsonUtility 只序列化字段，不序列化字典）
+            Save.bestTimeKeys.Clear();
+            Save.bestTimeValues.Clear();
+            foreach (var kv in Save.bestTime) { Save.bestTimeKeys.Add(kv.Key); Save.bestTimeValues.Add(kv.Value); }
+            Save.bestStarKeys.Clear();
+            Save.bestStarValues.Clear();
+            foreach (var kv in Save.bestStars) { Save.bestStarKeys.Add(kv.Key); Save.bestStarValues.Add(kv.Value); }
             PlayerPrefs.SetString(SAVE_KEY, JsonUtility.ToJson(Save));
             PlayerPrefs.Save();
         }
@@ -207,9 +247,15 @@ namespace Nailoong
         public System.Collections.Generic.List<string> unlockedSkills = new System.Collections.Generic.List<string>();
         public System.Collections.Generic.List<int> bestTimeKeys = new System.Collections.Generic.List<int>();
         public System.Collections.Generic.List<float> bestTimeValues = new System.Collections.Generic.List<float>();
+        public System.Collections.Generic.List<int> bestStarKeys = new System.Collections.Generic.List<int>();
+        public System.Collections.Generic.List<int> bestStarValues = new System.Collections.Generic.List<int>();
+        public System.Collections.Generic.List<string> collectedItems = new System.Collections.Generic.List<string>();
 
         [System.NonSerialized]
         public System.Collections.Generic.Dictionary<int, float> bestTime = new System.Collections.Generic.Dictionary<int, float>();
+
+        [System.NonSerialized]
+        public System.Collections.Generic.Dictionary<int, int> bestStars = new System.Collections.Generic.Dictionary<int, int>();
 
         public void Ensure()
         {
@@ -217,6 +263,14 @@ namespace Nailoong
             if (bestTimeKeys == null) bestTimeKeys = new System.Collections.Generic.List<int>();
             if (bestTimeValues == null) bestTimeValues = new System.Collections.Generic.List<float>();
             if (bestTime == null) bestTime = new System.Collections.Generic.Dictionary<int, float>();
+            if (bestStars == null) bestStars = new System.Collections.Generic.Dictionary<int, int>();
+            if (collectedItems == null) collectedItems = new System.Collections.Generic.List<string>();
+
+            // 反序列化后把平铺列表还原为字典
+            if (bestTime.Count == 0 && bestTimeKeys.Count == bestTimeValues.Count)
+                for (int i = 0; i < bestTimeKeys.Count; i++) bestTime[bestTimeKeys[i]] = bestTimeValues[i];
+            if (bestStars.Count == 0 && bestStarKeys.Count == bestStarValues.Count)
+                for (int i = 0; i < bestStarKeys.Count; i++) bestStars[bestStarKeys[i]] = bestStarValues[i];
         }
     }
 }

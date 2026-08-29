@@ -19,6 +19,7 @@ namespace Nailoong.EditorTools
             GameBuilder.Safe("场景 Level1_Beach", BuildLevel1_Beach);
             GameBuilder.Safe("场景 Level2_Forest", BuildLevel2_Forest);
             GameBuilder.Safe("场景 Level3_Volcano", BuildLevel3_Volcano);
+            GameBuilder.Safe("场景 Ending", BuildEnding);
             AssetDatabase.SaveAssets();
         }
 
@@ -159,6 +160,53 @@ namespace Nailoong.EditorTools
             SaveScene(scene, "MainMenu");
         }
 
+        // ================= 大结局 =================
+        static void BuildEnding()
+        {
+            var scene = NewScene("Ending");
+            AddBoot();
+
+            // 展示台 + 庆祝的奶龙
+            var island = AddPrefab("Rock", new Vector3(0f, -0.4f, 0f), null, 3.6f);
+            if (island != null) island.name = "ShowIsland";
+
+            var show = AddPrefab("Player_Nailoong", new Vector3(0f, 1.1f, 0f));
+            if (show != null)
+            {
+                show.name = "Nailoong_Show";
+                var toRemove = new List<Component>();
+                foreach (var c in show.GetComponents<Component>())
+                {
+                    if (c is Transform || c is SkinnedMeshRenderer || c is MeshRenderer || c is MeshFilter || c is DragonAnimator) continue;
+                    toRemove.Add(c);
+                }
+                foreach (var c in toRemove) UnityEngine.Object.DestroyImmediate(c);
+            }
+
+            // 零食小山（庆祝道具）
+            var rand = new System.Random(20260829);
+            for (int i = 0; i < 14; i++)
+            {
+                float a = rand.Next(0, 360) * Mathf.Deg2Rad;
+                float r = 1.2f + (float)rand.NextDouble() * 1.6f;
+                AddPrefab("Pickup_Snack", new Vector3(Mathf.Cos(a) * r, 0.6f + (float)rand.NextDouble() * 0.8f, Mathf.Sin(a) * r));
+            }
+
+            // 金色黄昏天空
+            EnvironmentFactory.BuildSky(
+                new Color(1f, 0.72f, 0.45f), new Color(1f, 0.9f, 0.65f), new Color(0.55f, 0.42f, 0.4f),
+                new Color(1f, 0.88f, 0.6f), new Color(1f, 0.85f, 0.7f), 0.005f, 0.5f);
+            AddSun(new Vector3(20f, -12f, 0f), new Color(1f, 0.9f, 0.75f), 1.35f);
+
+            var cam = AddCamera(new Vector3(0f, 1.7f, -5.2f));
+            cam.transform.LookAt(new Vector3(0f, 1.4f, 0f));
+
+            // 大结局控制（UI 运行时构建 + 返回主菜单）
+            new GameObject("EndingController").AddComponent<EndingController>();
+
+            SaveScene(scene, "Ending");
+        }
+
         // ================= 关卡 1：奶黄海滩 =================
         static void BuildLevel1_Beach()
         {
@@ -251,6 +299,7 @@ namespace Nailoong.EditorTools
             lf.bgm = "bgm_level1";
             lf.clearOnAllQuests = true;
             lf.clearMessage = "海滩清理完毕！向奶油森林进发！";
+            lf.parTime = 100f;
 
             var qs = flow.AddComponent<QuestSystem>();
             qs.quests = new List<Quest>
@@ -365,6 +414,7 @@ namespace Nailoong.EditorTools
             lf.clearOnAllQuests = false;
             lf.portalToActivate = portal;
             lf.clearMessage = "森林任务完成！传送门已开启，前往焦糖火山！";
+            lf.parTime = 140f;
 
             var qs = flow.AddComponent<QuestSystem>();
             qs.quests = new List<Quest>
@@ -454,6 +504,7 @@ namespace Nailoong.EditorTools
             lf.clearOnAllQuests = true;
             lf.maxRevives = 2;
             lf.clearMessage = "暴暴龙被击败，零食全部夺回！";
+            lf.parTime = 180f;
 
             var qs = flow.AddComponent<QuestSystem>();
             qs.quests = new List<Quest>

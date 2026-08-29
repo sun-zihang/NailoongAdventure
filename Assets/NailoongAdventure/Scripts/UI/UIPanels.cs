@@ -248,7 +248,9 @@ namespace Nailoong
             int seconds = Mathf.FloorToInt(time % 60f);
             float best = GameManager.Instance != null && GameManager.Instance.Save.bestTime.TryGetValue(levelIndex, out var b) ? b : -1f;
             string bestText = best > 0f ? $"最佳纪录：{Mathf.FloorToInt(best / 60f):00}:{Mathf.FloorToInt(best % 60f):00}" : "首次通关！";
-            clearStats.text = $"第 {levelIndex + 1} 关　用时 {minutes:00}:{seconds:00}\n{bestText}";
+            int stars = GameManager.Instance != null ? GameManager.Instance.GetStars(levelIndex) : 0;
+            string starText = new string('★', Mathf.Clamp(stars, 0, 3)) + new string('☆', Mathf.Clamp(3 - stars, 0, 3));
+            clearStats.text = $"第 {levelIndex + 1} 关　{starText}\n用时 {minutes:00}:{seconds:00}\n{bestText}";
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             if (AudioManager.Instance != null) AudioManager.Instance.Play("sfx_levelclear", 1f);

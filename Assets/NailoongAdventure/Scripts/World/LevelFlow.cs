@@ -18,6 +18,10 @@ namespace Nailoong
         public bool clearOnAllQuests = true;
         public GameObject portalToActivate;       // 任务全完成后激活的传送门
         public string clearMessage = "关卡完成！";
+        [Tooltip("三星目标用时（秒）；0 = 自动按关卡序号估算")]
+        public float parTime = 0f;
+
+        public float ParTime => parTime > 0f ? parTime : 75f + levelIndex * 45f;
 
         [Header("死亡")]
         public Transform respawnPoint;
@@ -54,12 +58,30 @@ namespace Nailoong
             {
                 cleared = true;
                 GameEvents.Toast(clearMessage);
+                Celebrate();
                 Invoke(nameof(DoClear), 1.2f);
             }
             else if (portalToActivate != null)
             {
                 portalToActivate.SetActive(true);
                 GameEvents.Toast("传送门已开启！");
+            }
+        }
+
+        /// <summary>通关庆祝：音效 + 全屏星光 + 屏震。</summary>
+        void Celebrate()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.Play("sfx_levelclear", 1f);
+            if (VFXManager.Instance != null)
+            {
+                var p = PlayerController.Instance;
+                Vector3 pos = p != null ? p.transform.position : transform.position;
+                for (int i = 0; i < 6; i++)
+                {
+                    Vector3 off = new Vector3(Random.Range(-2.5f, 2.5f), Random.Range(0.5f, 3f), Random.Range(-2.5f, 2.5f));
+                    VFXManager.Instance.Play("vfx_pickup", pos + off, Quaternion.identity, 1.6f);
+                }
+                VFXManager.Instance.Shake(0.25f, 0.3f);
             }
         }
 

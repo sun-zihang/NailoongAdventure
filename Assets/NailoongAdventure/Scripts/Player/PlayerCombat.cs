@@ -45,6 +45,9 @@ namespace Nailoong
         public SkillSetting roll = new SkillSetting
         { id = "roll", displayName = "咕噜冲撞", hint = "翻滚穿透，冲刺无敌", key = KeyCode.LeftShift, damage = 16f, rageCost = 0f, cooldown = 0.75f, range = 1.4f, angle = 360f, windup = 0.02f, duration = 0.38f, knockback = 6f };
 
+        public SkillSetting grow = new SkillSetting
+        { id = "grow", displayName = "巨大化", hint = "官方技能：变大，伤害+50% 范围更广", key = KeyCode.G, damage = 0f, rageCost = 35f, cooldown = 14f, range = 0f, angle = 0f, windup = 0.1f, duration = 6f, knockback = 0f };
+
         [Header("火力值")]
         public float maxRage = 100f;
         public float rage = 0f;
@@ -65,6 +68,7 @@ namespace Nailoong
         public float Rage01 => Mathf.Clamp01(rage / maxRage);
         public bool IsShifting => shiftTimer > 0f;
         public bool IsBreathing => breathTimer > 0f;
+        public bool IsBig => growTimer > 0f;
         public Dictionary<string, float> Cooldowns { get; } = new Dictionary<string, float>();
 
         PlayerController player;
@@ -72,7 +76,8 @@ namespace Nailoong
         Damageable dmg;
         SkillSetting[] all;
 
-        float shiftTimer, breathTimer, breathTick, comboWindow;
+        float shiftTimer, breathTimer, breathTick, comboWindow, growTimer;
+        Vector3 baseScale = Vector3.one;
         int comboIndex;
         bool comboQueued;
         readonly HashSet<Damageable> hitOnce = new HashSet<Damageable>();
@@ -87,7 +92,8 @@ namespace Nailoong
             player = GetComponent<PlayerController>();
             anim = GetComponent<DragonAnimator>();
             dmg = GetComponent<Damageable>();
-            all = new[] { claw, slam, breath, colorShift, roll };
+            all = new[] { claw, slam, breath, colorShift, roll, grow };
+            baseScale = transform.localScale;
         }
 
         void Start()
@@ -134,6 +140,17 @@ namespace Nailoong
                 if (shiftTimer <= 0f) GameEvents.Toast("变色状态结束");
             }
 
+            // 巨大化：缩放平滑过渡，结束时还原
+            float targetScale = growTimer > 0f ? 1.55f : 1f;
+            float cur = transform.localScale.x / Mathf.Max(baseScale.x, 0.001f);
+            float next = Mathf.Lerp(cur, targetScale, Time.deltaTime * 7f);
+            transform.localScale = baseScale * next;
+            if (growTimer > 0f)
+            {
+                growTimer -= Time.deltaTime;
+                if (growTimer <= 0f) GameEvents.Toast("巨大化结束");
+            }
+
             if (rage > 0f && !IsBreathing)
                 rage = Mathf.Max(0f, rage - rageDecayPerSecond * Time.deltaTime);
 
@@ -149,6 +166,7 @@ namespace Nailoong
             if (Input.GetKeyDown(slam.key)) TrySkill(slam, anim != null ? DragonAnimator.State.Slam : DragonAnimator.State.Claw);
             if (Input.GetKeyDown(breath.key)) TryBreath();
             if (Input.GetKeyDown(colorShift.key)) TryColorShift();
+            if (Input.GetKeyDown(grow.key)) TryGrow();
         }
 
         // ---------- 普攻三连 ----------
@@ -290,10 +308,31 @@ namespace Nailoong
             GameEvents.Toast("奶龙变色！减伤 50%，速度提升！");
         }
 
+        /// <summary>官方技能「变大」：巨大化 6 秒，伤害 +50%、范围 +20%。</summary>
+        void TryGrow()
+        {
+            if (!grow.unlocked || Cooldowns.ContainsKey(grow.id)) return;
+            if (rage < grow.rageCost) { GameEvents.Toast("火力值不足！"); return; }
+
+            SpendRage(grow.rageCost);
+            Cooldowns[grow.id] = grow.cooldown;
+            growTimer = grow.duration;
+            if (anim != null) anim.Play(DragonAnimator.State.Grow, 0.8f);
+            if (AudioManager.Instance != null) AudioManager.Instance.Play("sfx_slam", 0.8f, 0.7f);
+            if (VFXManager.Instance != null)
+            {
+                VFXManager.Instance.Play("vfx_slam", transform.position, Quaternion.identity, 1.6f);
+                VFXManager.Instance.Shake(0.3f, 0.3f);
+            }
+            GameEvents.Toast("奶龙巨大化！伤害提升 50%！");
+        }
+
         // ---------- 伤害判定 ----------
         void ConeHit(SkillSetting s, float damage, float range, float angle, Vector3? origin = null, bool continuous = false, bool silent = false)
         {
             Vector3 center = origin ?? transform.position;
+            // 巨大化加成：范围 +20%
+            range *= IsBig ? 1.2f : 1f;
             // 复用缓冲区，避免每次判定分配新数组（冲撞时每帧、吐息时高频调用）
             int count = Physics.OverlapSphereNonAlloc(center, range, hitBuffer, enemyMask, QueryTriggerInteraction.Collide);
 
@@ -313,7 +352,8 @@ namespace Nailoong
                 if (!continuous) hitOnce.Add(target);
 
                 bool crit = Random.value < criticalChance;
-                float finalDamage = damage * (crit ? criticalMultiplier : 1f) * (IsShifting ? 0.9f : 1f);
+                float bigMul = IsBig ? 1.5f : 1f;
+                float finalDamage = damage * (crit ? criticalMultiplier : 1f) * (IsShifting ? 0.9f : 1f) * bigMul;
                 Vector3 point = c.ClosestPoint(center);
 
                 target.TakeDamage(finalDamage, point, gameObject, crit, s.knockback);

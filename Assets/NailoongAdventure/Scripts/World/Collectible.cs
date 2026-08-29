@@ -82,6 +82,8 @@ namespace Nailoong
                     break;
                 default:
                     GameEvents.ItemCollected(itemId, amount);
+                    // 甜品图鉴：唯一 itemId 记入存档
+                    if (GameManager.Instance != null) GameManager.Instance.CollectItem(itemId);
                     break;
             }
 
