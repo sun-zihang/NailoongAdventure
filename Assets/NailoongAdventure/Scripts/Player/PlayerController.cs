@@ -36,6 +36,12 @@ namespace Nailoong
         public float groundCheckDistance = 0.28f;
         public LayerMask groundMask = ~0;
 
+        /// <summary>
+        /// 当前场景中的玩家单例。敌人/投射物/拾取物/相机统一通过它取引用，
+        /// 避免 FindObjectOfType 的全场景遍历（尤其不能在每帧调用）。
+        /// </summary>
+        public static PlayerController Instance { get; private set; }
+
         // 状态
         public bool IsGrounded { get; private set; }
         public bool IsDashing { get; private set; }
@@ -51,6 +57,7 @@ namespace Nailoong
 
         Rigidbody rb;
         CapsuleCollider col;
+        Damageable dmg;
         Vector2 input;
         Vector3 moveDir;
         Camera cam;
@@ -62,12 +69,19 @@ namespace Nailoong
 
         void Awake()
         {
+            Instance = this;
             rb = GetComponent<Rigidbody>();
             col = GetComponent<CapsuleCollider>();
+            dmg = GetComponent<Damageable>();
             rb.freezeRotation = true;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             jumps = maxJumps;
+        }
+
+        void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
         }
 
         void Start()
@@ -186,7 +200,6 @@ namespace Nailoong
             dashTimer = dashCooldown;
             OnDashStart?.Invoke();
 
-            var dmg = GetComponent<Damageable>();
             if (dmg != null) dmg.SetInvulnerable(dashInvulnerable);
 
             if (AudioManager.Instance != null) AudioManager.Instance.Play("sfx_dash", 0.8f);

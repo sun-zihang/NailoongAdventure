@@ -36,7 +36,7 @@ namespace Nailoong
 
         void Start()
         {
-            var p = FindObjectOfType<PlayerController>();
+            var p = PlayerController.Instance;
             if (p != null) player = p.transform;
 
             if (kind == InteractKind.Cage)
@@ -57,7 +57,7 @@ namespace Nailoong
             if (IsDone) return;
             if (player == null)
             {
-                var p = FindObjectOfType<PlayerController>();
+                var p = PlayerController.Instance;
                 if (p != null) player = p.transform;
                 return;
             }

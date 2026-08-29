@@ -65,7 +65,7 @@ namespace Nailoong
 
         void Start()
         {
-            var p = FindObjectOfType<PlayerController>();
+            var p = PlayerController.Instance;
             if (p != null) player = p.transform;
             dmg.Damaged += OnDamaged;
             dmg.Died += OnDied;
@@ -76,7 +76,7 @@ namespace Nailoong
             if (state == State.Dead) return;
             if (player == null)
             {
-                var p = FindObjectOfType<PlayerController>();
+                var p = PlayerController.Instance;
                 if (p != null) player = p.transform;
             }
 

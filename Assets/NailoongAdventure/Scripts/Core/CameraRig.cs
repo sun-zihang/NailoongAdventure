@@ -41,6 +41,27 @@ namespace Nailoong
         Camera cam;
         Transform bossTarget;
         float bossWeight;
+        PlayerController playerRef;
+
+        /// <summary>
+        /// 帧率无关的阻尼系数，替代 Lerp(a, b, dt * k)。
+        /// 后者在 144Hz 与 60Hz 下平滑速度不一致，会让相机手感随帧率漂移。
+        /// </summary>
+        static float DampT(float lambda, float dt) => 1f - Mathf.Exp(-lambda * dt);
+
+        /// <summary>缓存玩家引用，避免 LateUpdate 每帧 GetComponent（原本每帧调用两次）。</summary>
+        PlayerController Player
+        {
+            get
+            {
+                if (playerRef == null)
+                {
+                    playerRef = PlayerController.Instance;
+                    if (playerRef == null && target != null) playerRef = target.GetComponent<PlayerController>();
+                }
+                return playerRef;
+            }
+        }
 
         void Awake()
         {
@@ -55,7 +76,7 @@ namespace Nailoong
         {
             if (target == null)
             {
-                var player = FindObjectOfType<PlayerController>();
+                var player = PlayerController.Instance;
                 if (player != null) target = player.transform;
             }
             Cursor.lockState = CursorLockMode.Locked;
@@ -86,14 +107,14 @@ namespace Nailoong
             Vector3 dir = rot * Vector3.back;
 
             float wanted = distance;
-            var player = target.GetComponent<PlayerController>();
+            var player = Player;
             if (player != null && player.IsDashing) wanted = distance * 0.85f;
             if (bossWeight > 0.1f) wanted = distance * 1.18f;
 
             if (Physics.SphereCast(pivot, 0.28f, dir, out var hit, wanted, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                 wanted = Mathf.Max(minDistance, hit.distance - 0.25f);
 
-            currentDistance = Mathf.Lerp(currentDistance, Mathf.Clamp(wanted, minDistance, maxDistance), Time.deltaTime * followLerp);
+            currentDistance = Mathf.Lerp(currentDistance, Mathf.Clamp(wanted, minDistance, maxDistance), DampT(followLerp, Time.deltaTime));
         }
 
         void ApplyTransform()
@@ -101,20 +122,20 @@ namespace Nailoong
             Vector3 pivot = target.position + pivotOffset;
             Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
 
-            bossWeight = Mathf.Lerp(bossWeight, bossTarget != null ? 1f : 0f, Time.deltaTime * 2.5f);
+            bossWeight = Mathf.Lerp(bossWeight, bossTarget != null ? 1f : 0f, DampT(2.5f, Time.deltaTime));
             if (bossWeight > 0.01f && bossTarget != null)
             {
                 Vector3 mid = Vector3.Lerp(target.position, bossTarget.position, 0.3f) + pivotOffset;
                 pivot = Vector3.Lerp(pivot, mid, bossWeight * 0.55f);
                 float wantYaw = Quaternion.LookRotation((bossTarget.position - transform.position).normalized).eulerAngles.y;
-                yaw += Mathf.DeltaAngle(yaw, wantYaw) * bossWeight * Time.deltaTime * 2.2f;
+                yaw += Mathf.DeltaAngle(yaw, wantYaw) * bossWeight * DampT(2.2f, Time.deltaTime);
                 rot = Quaternion.Euler(Mathf.Lerp(pitch, 9f, bossWeight * 0.5f), yaw, 0f);
             }
 
             Vector3 wantedPos = pivot + rot * Vector3.back * currentDistance;
-            transform.position = Vector3.Lerp(transform.position, wantedPos, Time.deltaTime * followLerp);
+            transform.position = Vector3.Lerp(transform.position, wantedPos, DampT(followLerp, Time.deltaTime));
             Quaternion look = Quaternion.LookRotation((pivot - transform.position).normalized);
-            transform.rotation = Quaternion.Slerp(transform.rotation, look, Time.deltaTime * rotateLerp);
+            transform.rotation = Quaternion.Slerp(transform.rotation, look, DampT(rotateLerp, Time.deltaTime));
 
             ApplyShake();
         }
@@ -134,10 +155,10 @@ namespace Nailoong
         void UpdateFov()
         {
             if (cam == null) return;
-            var player = target.GetComponent<PlayerController>();
+            var player = Player;
             float goal = baseFov;
             if (player != null && player.IsDashing) goal = sprintFov;
-            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, goal, Time.deltaTime * fovLerp);
+            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, goal, DampT(fovLerp, Time.deltaTime));
         }
 
         public void AddTrauma(float amount, float duration)

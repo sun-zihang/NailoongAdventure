@@ -86,7 +86,7 @@ namespace Nailoong
 
         void Revive()
         {
-            var player = FindObjectOfType<PlayerController>();
+            var player = PlayerController.Instance;
             if (player == null) return;
 
             var dmg = player.GetComponent<Damageable>();

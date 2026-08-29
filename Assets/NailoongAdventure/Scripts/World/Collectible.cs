@@ -34,7 +34,7 @@ namespace Nailoong
         void Start()
         {
             basePos = transform.position;
-            var p = FindObjectOfType<PlayerController>();
+            var p = PlayerController.Instance;
             if (p != null) player = p.transform;
             var col = GetComponent<Collider>();
             if (col != null) col.isTrigger = true;
@@ -45,7 +45,7 @@ namespace Nailoong
             if (collected) return;
             if (player == null)
             {
-                var p = FindObjectOfType<PlayerController>();
+                var p = PlayerController.Instance;
                 if (p != null) player = p.transform;
             }
 

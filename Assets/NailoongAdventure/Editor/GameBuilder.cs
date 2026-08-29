@@ -171,6 +171,87 @@ namespace Nailoong.EditorTools
             if (Application.isBatchMode) EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 构建 WebGL 网页版：切到 WebGL 平台（该平台只支持 IL2CPP）并打包到 Builds/WebGL。
+        /// 用 -executeMethod Nailoong.EditorTools.GameBuilder.BuildWebGL 调用。
+        /// 若场景尚未生成，会先自动执行一键生成。
+        /// </summary>
+        [MenuItem("奶龙/构建 WebGL 网页版", false, 21)]
+        public static void BuildWebGL()
+        {
+            // 场景不存在 -> 先一键生成
+            if (!File.Exists(SCENES + "/Level1_Beach.unity"))
+            {
+                Debug.Log("[奶龙] 未检测到关卡场景，先执行一键生成…");
+                BuildAll();
+            }
+
+            var scenes = new List<string>();
+            foreach (var name in new[] { "MainMenu", "Level1_Beach", "Level2_Forest", "Level3_Volcano" })
+            {
+                string path = SCENES + "/" + name + ".unity";
+                if (File.Exists(path)) scenes.Add(path);
+            }
+
+            if (scenes.Count == 0)
+            {
+                Debug.LogError("[奶龙] 没有可构建的场景，构建中止。请先执行「奶龙/一键生成 Demo（全量重建）」。");
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                return;
+            }
+
+            ConfigureBuildSettings();
+
+            // 切到 WebGL 平台（会触发一次全量资产重导入，首次切换较慢）
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
+            {
+                Debug.Log("[奶龙] 切换活动构建目标到 WebGL，首次切换需重新导入资产，请耐心等待…");
+                EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
+            }
+
+            // WebGL 只支持 IL2CPP 后端
+            PlayerSettings.SetScriptingBackend(BuildTargetGroup.WebGL, ScriptingImplementation.IL2CPP);
+            // 关闭托管剥离：避免反射调用/程序化生成依赖的类型被误删
+            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.Disabled);
+            // 关闭压缩：产物为未压缩的 .wasm/.data/.js，静态托管时无需服务端配置 Content-Encoding
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            PlayerSettings.WebGL.memorySize = 512;
+
+            string outDir = "Builds/WebGL";
+            if (Directory.Exists(outDir)) Directory.Delete(outDir, true);
+            Directory.CreateDirectory(outDir);
+
+            var options = new BuildPlayerOptions
+            {
+                scenes = scenes.ToArray(),
+                locationPathName = outDir,
+                target = BuildTarget.WebGL,
+                options = BuildOptions.None
+            };
+
+            Debug.Log("[奶龙] 开始构建 WebGL 网页版，场景数: " + scenes.Count);
+            var report = BuildPipeline.BuildPlayer(options);
+
+            string result = report.summary.result.ToString();
+            Debug.Log("[奶龙] WebGL 构建结果: " + result
+                      + " | 错误数: " + report.summary.totalErrors
+                      + " | 耗时: " + report.summary.totalTime
+                      + " | 输出: " + report.summary.outputPath);
+
+            if (result != "Succeeded")
+            {
+                foreach (var step in report.steps)
+                    foreach (var m in step.messages)
+                        if (m.type == LogType.Error)
+                            Debug.LogError("[奶龙构建错误] " + m.content);
+                Debug.LogError("[奶龙] WebGL 构建未成功，结果: " + result);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                return;
+            }
+
+            if (Application.isBatchMode) EditorApplication.Exit(0);
+        }
+
         // ================= 目录与基础资产 =================
         static void PrepareFolders()
         {

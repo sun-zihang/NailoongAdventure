@@ -21,9 +21,18 @@ namespace Nailoong
         float timer;
         TrailRenderer trail;
 
-        public void Launch(Vector3 direction, float speed, float dmg, GameObject ownerGo)
+        // 复用缓冲区：避免每帧 OverlapSphere 分配新数组造成 GC 压力
+        const int MaxHits = 16;
+        readonly Collider[] hits = new Collider[MaxHits];
+
+        void Awake()
         {
             rb = GetComponent<Rigidbody>();
+        }
+
+        public void Launch(Vector3 direction, float speed, float dmg, GameObject ownerGo)
+        {
+            if (rb == null) rb = GetComponent<Rigidbody>();
             owner = ownerGo;
             damage = dmg;
             rb.useGravity = false;
@@ -39,7 +48,8 @@ namespace Nailoong
 
             if (homing)
             {
-                var p = FindObjectOfType<PlayerController>();
+                // 用静态单例取玩家，避免每帧 FindObjectOfType 全场景遍历
+                var p = PlayerController.Instance;
                 if (p != null)
                 {
                     Vector3 want = (p.transform.position + Vector3.up * 0.8f - transform.position).normalized;
@@ -50,9 +60,10 @@ namespace Nailoong
                 }
             }
 
-            var cols = Physics.OverlapSphere(transform.position, radius, hitMask, QueryTriggerInteraction.Ignore);
-            foreach (var c in cols)
+            int count = Physics.OverlapSphereNonAlloc(transform.position, radius, hits, hitMask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
             {
+                var c = hits[i];
                 if (c == null) continue;
                 if (owner != null && c.transform.IsChildOf(owner.transform)) continue;
                 var target = c.GetComponentInParent<Damageable>();
