@@ -77,6 +77,11 @@ namespace Nailoong
         bool comboQueued;
         readonly HashSet<Damageable> hitOnce = new HashSet<Damageable>();
 
+        // 复用缓冲：避免每帧 / 每次攻击产生 GC 分配（WebGL 移动端尤其敏感）
+        const int MAX_HITS = 64;
+        readonly Collider[] hitBuffer = new Collider[MAX_HITS];
+        readonly List<string> cooldownKeys = new List<string>();
+
         void Awake()
         {
             player = GetComponent<PlayerController>();
@@ -108,8 +113,9 @@ namespace Nailoong
 
         void TickTimers()
         {
-            var keys = new List<string>(Cooldowns.Keys);
-            foreach (var k in keys)
+            cooldownKeys.Clear();
+            cooldownKeys.AddRange(Cooldowns.Keys);
+            foreach (var k in cooldownKeys)
             {
                 float v = Cooldowns[k] - Time.deltaTime;
                 if (v <= 0f) Cooldowns.Remove(k);
@@ -288,11 +294,12 @@ namespace Nailoong
         void ConeHit(SkillSetting s, float damage, float range, float angle, Vector3? origin = null, bool continuous = false, bool silent = false)
         {
             Vector3 center = origin ?? transform.position;
-            var hits = Physics.OverlapSphere(center, range, enemyMask, QueryTriggerInteraction.Collide);
-            int hitCount = 0;
+            // 复用缓冲区，避免每次判定分配新数组（冲撞时每帧、吐息时高频调用）
+            int count = Physics.OverlapSphereNonAlloc(center, range, hitBuffer, enemyMask, QueryTriggerInteraction.Collide);
 
-            foreach (var c in hits)
+            for (int i = 0; i < count; i++)
             {
+                var c = hitBuffer[i];
                 if (c == null || c.transform == transform) continue;
                 var target = c.GetComponentInParent<Damageable>();
                 if (target == null || target.faction != Faction.Enemy) continue;
@@ -311,7 +318,6 @@ namespace Nailoong
 
                 target.TakeDamage(finalDamage, point, gameObject, crit, s.knockback);
                 AddRage(ragePerHit);
-                hitCount++;
 
                 if (!silent)
                 {
@@ -325,13 +331,8 @@ namespace Nailoong
                 }
             }
 
-            if (hitCount > 0 && !continuous && player != null)
-                StartCoroutine(KnockbackFeel(0.05f));
-        }
-
-        IEnumerator KnockbackFeel(float t)
-        {
-            yield return new WaitForSeconds(t);
+            // 命中反馈已由 VFXManager 的 HitStop / Shake 承担，
+            // 原 KnockbackFeel 空协程只产生分配开销，已移除。
         }
 
         // ---------- 火力值 ----------

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Nailoong
@@ -480,10 +481,20 @@ namespace Nailoong
             if (idx >= 0) targetEuler[idx] += euler;
         }
 
+        // 骨骼名 → 索引的静态查表。原实现为线性扫描字符串比较，
+        // 而 Add() 每帧会调用几十次，改为一次性建表后 O(1) 查找。
+        static readonly Dictionary<string, int> BoneIndex = BuildBoneIndex();
+
+        static Dictionary<string, int> BuildBoneIndex()
+        {
+            var map = new Dictionary<string, int>(BoneNames.Length);
+            for (int i = 0; i < BoneNames.Length; i++) map[BoneNames[i]] = i;
+            return map;
+        }
+
         int IndexOf(string name)
         {
-            for (int i = 0; i < BoneNames.Length; i++) if (BoneNames[i] == name) return i;
-            return -1;
+            return BoneIndex.TryGetValue(name, out int idx) ? idx : -1;
         }
 
         static Transform FindDeep(Transform root, string name)

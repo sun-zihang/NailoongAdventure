@@ -51,6 +51,8 @@ namespace Nailoong
         Vector3 visualBase, bodyBasePos;
         Transform bodyRoot;
         Rigidbody rb;
+        // 缓存翅膀引用：原实现在 Animate() 里每帧 transform.Find 遍历层级
+        Transform wingL, wingR;
 
         void Awake()
         {
@@ -58,6 +60,8 @@ namespace Nailoong
             rb = GetComponent<Rigidbody>();
             homePos = transform.position;
             bodyRoot = transform.Find("Body") ?? transform;
+            wingL = transform.Find("Wing_L");
+            wingR = transform.Find("Wing_R");
             visualBase = bodyRoot.localScale;
             bodyBasePos = bodyRoot.localPosition;
             PickPatrolTarget();
@@ -265,10 +269,8 @@ namespace Nailoong
             {
                 flapPhase += Time.deltaTime * (state == State.Chase ? 18f : 9f);
                 float flap = Mathf.Sin(flapPhase) * 40f;
-                var wl = transform.Find("Wing_L");
-                var wr = transform.Find("Wing_R");
-                if (wl != null) wl.localRotation = Quaternion.Euler(0f, 0f, flap);
-                if (wr != null) wr.localRotation = Quaternion.Euler(0f, 0f, -flap);
+                if (wingL != null) wingL.localRotation = Quaternion.Euler(0f, 0f, flap);
+                if (wingR != null) wingR.localRotation = Quaternion.Euler(0f, 0f, -flap);
 
                 float tilt = state == State.Attack ? 35f : 0f;
                 bodyRoot.localRotation = Quaternion.Slerp(bodyRoot.localRotation, Quaternion.Euler(tilt, 0f, 0f), Time.deltaTime * 8f);

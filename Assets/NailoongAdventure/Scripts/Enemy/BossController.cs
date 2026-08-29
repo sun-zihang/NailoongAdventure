@@ -51,6 +51,8 @@ namespace Nailoong
         float stateTimer, actionCooldown, walkPhase, flapPhase;
         Vector3 chargeDir;
         bool summonedP2;
+        // 缓存骨骼引用：原实现在 Animate() 里每帧 transform.Find 遍历层级
+        Transform wingL, wingR, tail1;
 
         void Awake()
         {
@@ -58,6 +60,9 @@ namespace Nailoong
             dmg = GetComponent<Damageable>();
             rb = GetComponent<Rigidbody>();
             bodyRoot = transform.Find("Body") ?? transform;
+            wingL = transform.Find("Wing_L");
+            wingR = transform.Find("Wing_R");
+            tail1 = transform.Find("Tail1");
             if (mouthPoint == null) mouthPoint = transform.Find("MouthPoint");
         }
 
@@ -457,10 +462,8 @@ namespace Nailoong
             if (bodyRoot == null) return;
             flapPhase += Time.deltaTime * (state == State.Charge ? 14f : 5f);
             float flap = Mathf.Sin(flapPhase) * 26f;
-            var wl = transform.Find("Wing_L");
-            var wr = transform.Find("Wing_R");
-            if (wl != null) wl.localRotation = Quaternion.Euler(0f, 0f, flap);
-            if (wr != null) wr.localRotation = Quaternion.Euler(0f, 0f, -flap);
+            if (wingL != null) wingL.localRotation = Quaternion.Euler(0f, 0f, flap);
+            if (wingR != null) wingR.localRotation = Quaternion.Euler(0f, 0f, -flap);
 
             float lean = 0f;
             if (state == State.ChargeWindup) lean = -18f;
@@ -471,11 +474,10 @@ namespace Nailoong
             float breathe = Mathf.Sin(Time.time * 1.8f) * 2f;
             bodyRoot.localRotation = Quaternion.Slerp(bodyRoot.localRotation, Quaternion.Euler(lean + breathe, 0f, 0f), Time.deltaTime * 7f);
 
-            var tail = transform.Find("Tail1");
-            if (tail != null)
+            if (tail1 != null)
             {
                 float sway = Mathf.Sin(Time.time * 3.2f) * 12f;
-                tail.localRotation = Quaternion.Euler(0f, sway, 0f);
+                tail1.localRotation = Quaternion.Euler(0f, sway, 0f);
             }
         }
     }
