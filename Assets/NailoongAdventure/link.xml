@@ -1,0 +1,12 @@
+<linker>
+  <!--
+    高托管剥离（ManagedStrippingLevel.High）下，IL2CPP 链接器会移除"看似未使用"的代码。
+    本游戏所有脚本都在 Nailoong 命名空间，统一保住，避免：
+      - JsonUtility 反序列化 SaveData 时字段被误删（序列化字段无直接代码引用）；
+      - 程序化生成/动画状态机依赖的类型被误判为死代码。
+    剥离只作用于 BCL / Unity 引擎未用代码，不影响游戏逻辑体积外的收益。
+  -->
+  <assembly fullname="Assembly-CSharp">
+    <namespace fullname="Nailoong" preserve="all" />
+  </assembly>
+</linker>

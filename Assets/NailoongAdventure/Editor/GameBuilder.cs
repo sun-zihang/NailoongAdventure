@@ -211,8 +211,10 @@ namespace Nailoong.EditorTools
 
             // WebGL 只支持 IL2CPP 后端
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.WebGL, ScriptingImplementation.IL2CPP);
-            // 关闭托管剥离：避免反射调用/程序化生成依赖的类型被误删
-            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.Disabled);
+            // 高托管剥离：大幅削减未使用的 BCL / Unity 引擎代码，缩小 wasm。
+            // 游戏脚本（Nailoong 命名空间）已由 link.xml 整体保住，规避 JsonUtility
+            // 序列化 SaveData 字段被误删等风险；本游戏无反射调用，剥离安全。
+            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.High);
             // Brotli 压缩：wasm(~42MB) 压到 ~7.6MB、data(~18MB) 压到 ~8.8MB，
             // 全部低于 Cloudflare Pages 单文件 25MB 上限，避免托管时被静默丢弃。
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
