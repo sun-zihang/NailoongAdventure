@@ -1,9 +1,7 @@
-# 为 Unity WebGL 网页版启用跨源隔离（COOP/COEP），
-# 以支持 WebAssembly 多线程（SharedArrayBuffer）。
-# 仅在 /game/* 作用域下声明，不影响展示页与其它资源。
-/game/*
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Embedder-Policy: require-corp
+# 注意：不要给 /game/* 加 COOP/COEP，否则 .unityweb 子资源会被
+# Cross-Origin-Embedder-Policy: require-corp 拦截（浏览器要求嵌入
+# 资源必须带 CORP 头，而 Cloudflare Pages 默认不给静态文件加）。
+# 本 Demo 未启用 WebAssembly 多线程 / SharedArrayBuffer，不需要 COEP。
 
 # 禁止 Cloudflare / 中间代理对 .unityweb 做自动转码或压缩。
 # Unity 的 Decompression Fallback 期望拿到原始 .unityweb 字节，
