@@ -8,4 +8,4 @@
 # 由 JS 端自行解压；若 CDN 额外加 Content-Encoding 头，会触发
 # "Content-Encoding header is incorrectly enabled" 错误。
 /game/Build/*.unityweb
-  Cache-Control: public, max-age=300, no-transform
+  Cache-Control: public, max-age=86400, no-transform
