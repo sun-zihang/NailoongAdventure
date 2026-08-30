@@ -626,7 +626,16 @@ namespace Nailoong.EditorTools
                 var path = folder + "/" + Sanitize(mesh.name) + ".asset";
                 if (AssetDatabase.LoadAssetAtPath<Mesh>(path) == null) AssetDatabase.CreateAsset(mesh, path);
                 var saved = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-                if (saved != null) smr.sharedMesh = saved;
+                if (saved != null)
+                {
+                    smr.sharedMesh = saved;
+                    // WebGL/IL2CPP 构建后，SkinnedMeshRenderer 的 m_AABB 若为零会导致
+                    // 运行时被视锥剔除而“消失”。显式设置 localBounds 并开启屏幕外更新，
+                    // 保证 bounds 正确参与剔除。
+                    smr.localBounds = saved.bounds;
+                    smr.updateWhenOffscreen = true;
+                    EditorUtility.SetDirty(smr);
+                }
             }
         }
 

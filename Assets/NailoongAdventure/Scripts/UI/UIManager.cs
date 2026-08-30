@@ -35,6 +35,7 @@ namespace Nailoong
         Damageable playerHealth;
         QuestSystem boundQuest;
         Image flashImage;
+        bool touchReady;
 
         class SkillSlot
         {
@@ -191,6 +192,14 @@ namespace Nailoong
 
             // 延迟绑定：场景中的玩家/任务系统可能晚于 UI 创建，这里每帧检测一次
             if (combat != null && skillSlots.Count == 0) BindSkillBar(combat);
+
+            // 移动端触控：摇杆 + 跳跃/冲刺按钮（只建一次）
+            if (combat != null && !touchReady)
+            {
+                var pc = combat.GetComponent<PlayerController>();
+                TouchControls.Ensure(canvas != null ? canvas.transform : null, pc, combat);
+                touchReady = true;
+            }
 
             var qs = QuestSystem.Instance;
             if (qs != null && boundQuest != qs)
@@ -382,6 +391,14 @@ namespace Nailoong
                 root.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 96);
                 var le = root.AddComponent<LayoutElement>();
                 le.preferredWidth = 96; le.preferredHeight = 96;
+
+                // 技能槽可点击（移动端触控 / 桌面鼠标皆可施放）
+                var rootImg = root.GetComponent<Image>();
+                if (rootImg != null) rootImg.raycastTarget = true;
+                var btn = root.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                string skillId = s.id;
+                btn.onClick.AddListener(() => c.TryCastById(skillId));
 
                 slot.icon = NewImage("Icon", root.transform, KeyColor(s.id), 1f);
                 Stretch(slot.icon.rectTransform, new Vector2(6, 6), new Vector2(-6, -6));

@@ -168,7 +168,8 @@ namespace Nailoong.EditorTools
             smr.sharedMaterial = material;
             smr.bones = bones;
             smr.rootBone = hips;
-            smr.updateWhenOffscreen = false;
+            smr.localBounds = mesh.bounds;
+            smr.updateWhenOffscreen = true;
 
             // ---------- 大眼睛（独立网格，用于眨眼与表情缩放） ----------
             CreateEye(head, "Eye_L", new Vector3(-0.18f, 0.07f, 0.31f), material);

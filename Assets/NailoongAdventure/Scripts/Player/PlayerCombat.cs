@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Nailoong
 {
@@ -162,11 +163,26 @@ namespace Nailoong
             if (player == null || !player.CanAct) return;
             if (GameManager.Instance != null && GameManager.Instance.State != GameState.Playing) return;
 
-            if (Input.GetKeyDown(KeyCode.Mouse0)) TryClaw();
+            // 点在 UI（技能按钮/摇杆）上时不触发普攻
+            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            if (Input.GetKeyDown(KeyCode.Mouse0) && !overUI) TryClaw();
             if (Input.GetKeyDown(slam.key)) TrySkill(slam, anim != null ? DragonAnimator.State.Slam : DragonAnimator.State.Claw);
             if (Input.GetKeyDown(breath.key)) TryBreath();
             if (Input.GetKeyDown(colorShift.key)) TryColorShift();
             if (Input.GetKeyDown(grow.key)) TryGrow();
+        }
+
+        /// <summary>触控技能按钮统一入口（UIManager 的技能槽 onClick 调用）。</summary>
+        public void TryCastById(string id)
+        {
+            if (player == null || !player.CanAct) return;
+            if (GameManager.Instance != null && GameManager.Instance.State != GameState.Playing) return;
+
+            if (id == claw.id) TryClaw();
+            else if (id == slam.id) TrySkill(slam, anim != null ? DragonAnimator.State.Slam : DragonAnimator.State.Claw);
+            else if (id == breath.id) TryBreath();
+            else if (id == colorShift.id) TryColorShift();
+            else if (id == grow.id) TryGrow();
         }
 
         // ---------- 普攻三连 ----------

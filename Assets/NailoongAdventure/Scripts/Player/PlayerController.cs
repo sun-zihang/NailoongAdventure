@@ -105,14 +105,22 @@ namespace Nailoong
         }
 
         // ---------- 输入 ----------
+        // 触控注入（移动端虚拟摇杆 / 按钮调用）
+        Vector2 touchMove;
+        bool touchJumpQueued;
+        public void SetTouchMove(Vector2 dir) => touchMove = dir;
+        public void QueueTouchJump() => touchJumpQueued = true;
+        public void TouchDash() { if (CanAct) TryDash(); }
+
         void ReadInput()
         {
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
-            input = new Vector2(h, v).normalized;
-            IsSprinting = Input.GetKey(KeyCode.LeftShift) && input.magnitude > 0.1f;
+            float h = Mathf.Clamp(Input.GetAxisRaw("Horizontal") + touchMove.x, -1f, 1f);
+            float v = Mathf.Clamp(Input.GetAxisRaw("Vertical") + touchMove.y, -1f, 1f);
+            input = new Vector2(h, v);
+            if (input.sqrMagnitude > 1f) input.Normalize();
+            IsSprinting = (Input.GetKey(KeyCode.LeftShift) || touchMove.sqrMagnitude > 0.92f) && input.magnitude > 0.1f;
 
-            if (Input.GetButtonDown("Jump")) buffer = jumpBuffer;
+            if (Input.GetButtonDown("Jump") || touchJumpQueued) { buffer = jumpBuffer; touchJumpQueued = false; }
             if (Input.GetKeyDown(KeyCode.LeftShift) && CanAct) TryDash();
         }
 

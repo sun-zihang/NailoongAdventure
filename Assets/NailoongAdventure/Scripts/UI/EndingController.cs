@@ -28,7 +28,7 @@ namespace Nailoong
             canvasGo.AddComponent<GraphicRaycaster>();
 
             var font = Resources.Load<Font>("Fonts/simhei");
-            if (font == null) font = Font.CreateDynamicFontFromOSFont("Microsoft YaHei", 40);
+            if (font == null) font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             Text MakeText(string name, string content, int size, Color color, float y, FontStyle style = FontStyle.Normal)
             {
